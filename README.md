@@ -125,8 +125,8 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 Have questions or need support? Feel free to reach out:
 
-- **Telegram**: [@YourTelegramHandle](https://t.me/YourTelegramHandle)
-- **Email**: your_email@example.com
+- **Telegram**: [@YourTelegramHandle](https://t.me/sina8013)
+- **Email**: sina8013@gmail.com
 
 ---
 
