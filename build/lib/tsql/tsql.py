@@ -103,7 +103,7 @@ class TSQL:
         time.sleep(random.uniform(3, 6))
 
     async def connect(self):
-        await self.client.connect()
+        await self.client.start()
 
     async def initDatabase(self):
         self.channel_id = await self.client.get_entity(self.chanellInviteLink)
