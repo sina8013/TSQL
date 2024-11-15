@@ -100,7 +100,6 @@ class TSQL:
             new_message = self.__encrypt__(new_message, self.encryptKey)
 
         await self.client.send_message(self.channel, new_message)
-        time.sleep(random.uniform(3, 6))
 
     async def connect(self):
         await self.client.start()
