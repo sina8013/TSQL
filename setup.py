@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="tsqlite",
-    version="0.2.0",
+    version="0.2.1",
     author="Sina Saeedi",
     author_email="sina8013@gmail.com",
     description="A Python library for managing and syncing SQLite databases over Telegram channels with secure encryption.",

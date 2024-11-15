@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: tsqlite
-Version: 0.2.0
+Version: 0.2.1
 Summary: A Python library for managing and syncing SQLite databases over Telegram channels with secure encryption.
 Home-page: https://github.com/sina8013/TSQL
 Author: Sina Saeedi
