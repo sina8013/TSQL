@@ -1,4 +1,3 @@
-
 # 🚀 TSQL - Telegram SQLite Library
 
 TSQL is a powerful Python library that synchronizes and manages SQLite databases through **Telegram channels**. With advanced encryption and real-time updates, TSQL makes database management and sharing simple and secure. 📦✨
@@ -67,10 +66,18 @@ TSQL uses JSON files to define your database structure. Here's an example:
 
 ```json
 {
-    "my_table": [
-        {"id": 1, "name": "John Doe"},
-        {"id": 2, "name": "Jane Doe"}
-    ]
+  "my_table": [
+    { "id": 1, "name": "John Doe" },
+    { "id": 2, "name": "Jane Doe" }
+  ],
+  "my_table_2": [
+    { "id": 1, "name": "John Doe 2" },
+    { "id": 2, "name": "Jane Doe 2" }
+  ],
+  "my_table_3": [
+    { "id": 1, "name": "John Doe 3" },
+    { "id": 2, "name": "Jane Doe 3" }
+  ]
 }
 ```
 
@@ -99,6 +106,7 @@ pytest tests/
 ## 👩‍💻 Contributing
 
 We welcome contributions! Feel free to:
+
 1. Fork the repo.
 2. Create a feature branch: `git checkout -b feature-name`.
 3. Commit your changes: `git commit -m 'Add feature'`.
@@ -116,6 +124,7 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 ## 📞 Contact
 
 Have questions or need support? Feel free to reach out:
+
 - **Telegram**: [@YourTelegramHandle](https://t.me/YourTelegramHandle)
 - **Email**: your_email@example.com
 
