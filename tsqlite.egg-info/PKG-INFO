@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: tsqlite
-Version: 0.1.0
+Version: 0.1.1
 Summary: A Python library for managing and syncing SQLite databases over Telegram channels with secure encryption.
 Home-page: https://github.com/sina8013/TSQL
 Author: Sina Saeedi
@@ -46,7 +46,7 @@ TSQL is a powerful Python library that synchronizes and manages SQLite databases
 To install TSQL, use pip:
 
 ```bash
-pip install tsql
+pip install tsqlite
 ```
 
 ---
