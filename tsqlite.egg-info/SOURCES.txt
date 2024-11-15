@@ -1,0 +1,11 @@
+LICENSE
+README.md
+setup.py
+tests/test_tsql.py
+tsql/__init__.py
+tsql/tsql.py
+tsqlite.egg-info/PKG-INFO
+tsqlite.egg-info/SOURCES.txt
+tsqlite.egg-info/dependency_links.txt
+tsqlite.egg-info/requires.txt
+tsqlite.egg-info/top_level.txt

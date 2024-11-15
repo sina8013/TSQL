@@ -1,3 +1,30 @@
+Metadata-Version: 2.1
+Name: tsqlite
+Version: 0.1.0
+Summary: A Python library for managing and syncing SQLite databases over Telegram channels with secure encryption.
+Home-page: https://github.com/sina8013/TSQL
+Author: Sina Saeedi
+Author-email: sina8013@gmail.com
+Classifier: Development Status :: 4 - Beta
+Classifier: Intended Audience :: Developers
+Classifier: Topic :: Software Development :: Libraries
+Classifier: Topic :: Database :: Database Engines/Servers
+Classifier: Topic :: Communications :: Chat
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.6
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.6
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: telethon>=1.24.0
+Requires-Dist: pycryptodome>=3.15.0
+Requires-Dist: pandas>=1.3.0
+
 # 🚀 TSQL - Telegram SQLite Library
 
 TSQL is a powerful Python library that synchronizes and manages SQLite databases through **Telegram channels**. With advanced encryption and real-time updates, TSQL makes database management and sharing simple and secure. 📦✨
@@ -19,7 +46,7 @@ TSQL is a powerful Python library that synchronizes and manages SQLite databases
 To install TSQL, use pip:
 
 ```bash
-pip install tsqlite
+pip install tsql
 ```
 
 ---

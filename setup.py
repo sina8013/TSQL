@@ -1,12 +1,12 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="tsql",
+    name="tsqlite",
     version="0.1.0",
     author="Sina Saeedi",
     author_email="sina8013@gmail.com",
     description="A Python library for managing and syncing SQLite databases over Telegram channels with secure encryption.",
-    long_description=open("README.md").read(),
+    long_description=open("README.md", "r", encoding="utf-8").read(),
     long_description_content_type="text/markdown",
     url="https://github.com/sina8013/TSQL",
     packages=find_packages(),
