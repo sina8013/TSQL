@@ -29,10 +29,10 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/yourusername/tsql"
-Documentation = "https://github.com/yourusername/tsql#readme"
-Source = "https://github.com/yourusername/tsql"
-Tracker = "https://github.com/yourusername/tsql/issues"
+Homepage = "https://github.com/sina8013/TSQLl"
+Documentation = "https://github.com/sina8013/TSQL#readme"
+Source = "https://github.com/sina8013/TSQL"
+Tracker = "https://github.com/sina8013/TSQL/issues"
 
 [tool.setuptools]
 package-dir = {"" = "tsql"} 

@@ -8,7 +8,7 @@ setup(
     description="A Python library for managing and syncing SQLite databases over Telegram channels with secure encryption.",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
-    url="https://github.com/yourusername/tsql",
+    url="https://github.com/sina8013/TSQL",
     packages=find_packages(),
     classifiers=[
         "Development Status :: 4 - Beta",
