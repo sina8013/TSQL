@@ -1,55 +1,69 @@
+import asyncio
+import base64
+import json
+import random
+import sqlite3
+import time
+from pathlib import Path
+
+import pandas as pd
 from telethon import TelegramClient
 from telethon.tl.functions.messages import GetHistoryRequest
 from telethon.tl.types import PeerChannel
+
 from Crypto.Cipher import AES
 from Crypto.Random import get_random_bytes
 from Crypto.Protocol.KDF import PBKDF2
-import base64
-import time
-import json
-import pandas as pd
-import random
-import sqlite3
 
 
-class TSQL:
-    def __init__(
-        self,
-        api_id,
-        api_hash,
-        sessionName,
-        chanellInviteLink,
-        databaseStructurePath,
-        encryptKey="",
-    ):
-        self.client = TelegramClient(sessionName, api_id, api_hash)
-        self.chanellInviteLink = chanellInviteLink
-        self.databaseStructurePath = databaseStructurePath
-        self.encryptKey = encryptKey
-        self.all_message_ids = []
-        self.salt = get_random_bytes(16)
+class EncryptionHelper:
+    """Handles AES encryption and decryption with password-based key derivation."""
 
-    def __get_key__(self, password):
-        return PBKDF2(password, self.salt, dkLen=32)
+    @staticmethod
+    def _get_key(password: str, salt: bytes) -> bytes:
+        return PBKDF2(password, salt, dkLen=32)
 
-    def __encrypt__(self, plain_text, password):
-        key = self.__get_key__(password)
+    @classmethod
+    def encrypt(cls, plain_text: str, password: str) -> str:
+        salt = get_random_bytes(16)
+        key = cls._get_key(password, salt)
         cipher = AES.new(key, AES.MODE_GCM)
-        nonce = cipher.nonce
         cipher_text, tag = cipher.encrypt_and_digest(plain_text.encode("utf-8"))
-        return base64.b64encode(self.salt + nonce + tag + cipher_text).decode("utf-8")
+        return base64.b64encode(salt + cipher.nonce + tag + cipher_text).decode("utf-8")
 
-    def __decrypt__(self, encrypted_text, password):
+    @classmethod
+    def decrypt(cls, encrypted_text: str, password: str) -> str:
         encrypted_data = base64.b64decode(encrypted_text)
-        salt_from_data = encrypted_data[:16]
-        nonce = encrypted_data[16:32]
-        tag = encrypted_data[32:48]
-        cipher_text = encrypted_data[48:]
-        key = PBKDF2(password, salt_from_data, dkLen=32)
+        salt, nonce, tag, cipher_text = (
+            encrypted_data[:16],
+            encrypted_data[16:32],
+            encrypted_data[32:48],
+            encrypted_data[48:],
+        )
+        key = cls._get_key(password, salt)
         cipher = AES.new(key, AES.MODE_GCM, nonce=nonce)
         return cipher.decrypt_and_verify(cipher_text, tag).decode("utf-8")
 
-    async def __readRawDBJson__(self):
+
+class TSQL:
+    """Telegram + SQLite bridge with optional AES encryption."""
+
+    def __init__(self, api_id, api_hash, session_name, channel_link, db_schema_path, encrypt_key=""):
+        self.client = TelegramClient(session_name, api_id, api_hash)
+        self.channel_link = channel_link
+        self.db_schema_path = Path(db_schema_path)
+        self.encrypt_key = encrypt_key
+        self.all_message_ids = []
+        self.conn = None
+        self.cursor = None
+        self.data = {}
+
+    async def connect(self):
+        await self.client.start()
+        print("[INFO] Connected to Telegram")
+
+    async def _read_raw_db_json(self) -> str:
+        """Fetches raw DB JSON from Telegram channel messages."""
         history = await self.client(
             GetHistoryRequest(
                 peer=self.channel,
@@ -62,7 +76,10 @@ class TSQL:
                 hash=0,
             )
         )
+
         db_raw = ""
+        self.all_message_ids.clear()
+
         for message in history.messages:
             if message.message:
                 self.all_message_ids.append(message.id)
@@ -72,87 +89,90 @@ class TSQL:
 
                 db_raw += message.message
 
-        if self.encryptKey != "" and db_raw != "":
-            db_raw = self.__decrypt__(db_raw, self.encryptKey)
+        if self.encrypt_key and db_raw:
+            try:
+                db_raw = EncryptionHelper.decrypt(db_raw, self.encrypt_key)
+            except Exception as e:
+                print(f"[ERROR] Failed to decrypt data: {e}")
+                return ""
 
         return db_raw
 
-    def __chunkString__(self, string, chunk_size=4000):
-        return [string[i : i + chunk_size] for i in range(0, len(string), chunk_size)]
-
-    async def __deleteAllMessages__(self):
-        await self.__readRawDBJson__()
-
+    async def _delete_all_messages(self):
+        """Deletes all messages in the channel (reset DB)."""
+        await self._read_raw_db_json()
         if self.all_message_ids:
             await self.client.delete_messages(self.channel, self.all_message_ids)
+            print(f"[INFO] Deleted {len(self.all_message_ids)} old messages")
 
-    def __jsonToSqlite__(self, json_data):
-        self.data = json.loads(json_data)
-        dataframes = {}
-        for table_name, table_data in self.data.items():
-            dataframes[table_name] = pd.DataFrame(table_data)
+    async def _send_new_message(self, content: str):
+        """Sends new DB JSON to channel, encrypted if key provided."""
+        if self.encrypt_key:
+            content = EncryptionHelper.encrypt(content, self.encrypt_key)
+        await self.client.send_message(self.channel, content)
 
-        for table_name, df in dataframes.items():
+    def _json_to_sqlite(self, json_data: str):
+        """Loads JSON into in-memory SQLite database."""
+        try:
+            self.data = json.loads(json_data)
+        except json.JSONDecodeError as e:
+            print(f"[ERROR] Failed to load JSON: {e}")
+            self.data = {}
+            return
+
+        for table_name, records in self.data.items():
+            df = pd.DataFrame(records)
             df.to_sql(table_name, self.conn, index=False, if_exists="replace")
 
-    async def __sendNewMessages__(self, new_message):
-        if self.encryptKey != "":
-            new_message = self.__encrypt__(new_message, self.encryptKey)
+    async def init_database(self):
+        """Initialize Telegram channel DB with schema if empty."""
+        self.channel_id = await self.client.get_entity(self.channel_link)
+        self.channel = await self.client.get_entity(PeerChannel(int(self.channel_id.id)))
 
-        await self.client.send_message(self.channel, new_message)
+        schema = self.db_schema_path.read_text(encoding="utf-8")
+        messages = await self._read_raw_db_json()
 
-    async def connect(self):
-        await self.client.start()
-
-    async def initDatabase(self):
-        self.channel_id = await self.client.get_entity(self.chanellInviteLink)
-        self.channel = await self.client.get_entity(
-            PeerChannel(int(self.channel_id.id))
-        )
-        file = open(self.databaseStructurePath, "r", encoding="utf-8")
-
-        json_struct = file.read()
-
-        messages = await self.__readRawDBJson__()
-
-        if messages.startswith("#init") or messages == "":
-            await self.__deleteAllMessages__()
-            await self.__sendNewMessages__(json_struct)
+        if messages.startswith("#init") or not messages:
+            await self._delete_all_messages()
+            await self._send_new_message(schema)
+            print("[INFO] Database initialized with schema")
 
         self.conn = sqlite3.connect(":memory:")
         self.cursor = self.conn.cursor()
 
-    async def select(self, selectQuery):
-        db_json = await self.__readRawDBJson__()
-        self.__jsonToSqlite__(db_json)
+    async def select(self, query: str):
+        """Executes a SELECT query on the in-memory DB."""
+        db_json = await self._read_raw_db_json()
+        self._json_to_sqlite(db_json)
 
-        self.cursor.execute(selectQuery)
-        rows = self.cursor.fetchall()
+        try:
+            self.cursor.execute(query)
+            return self.cursor.fetchall()
+        except Exception as e:
+            print(f"[ERROR] Select query failed: {e}")
+            return []
 
-        return rows
+    async def execute(self, query: str):
+        """Executes an INSERT/UPDATE/DELETE and pushes updates back to Telegram."""
+        if not self.data:
+            db_json = await self._read_raw_db_json()
+            self._json_to_sqlite(db_json)
 
-    async def execute(self, query):
+        try:
+            self.cursor.execute(query)
+            self.conn.commit()
+        except Exception as e:
+            print(f"[ERROR] Execute query failed: {e}")
+            return
 
-        if not hasattr(self, "data") or not self.data:
-            db_json = await self.__readRawDBJson__()
-            self.__jsonToSqlite__(db_json)
-
-        self.cursor.execute(query)
-        self.conn.commit()
-
-        dataframes = {}
+        # Reload all tables
+        updated_data = {}
         for table_name in self.data.keys():
-            dataframes[table_name] = pd.read_sql_query(
-                f"SELECT * FROM {table_name}", self.conn
-            )
+            df = pd.read_sql_query(f"SELECT * FROM {table_name}", self.conn)
+            updated_data[table_name] = df.to_dict(orient="records")
 
-        updated_data = {
-            table_name: df.to_dict(orient="records")
-            for table_name, df in dataframes.items()
-        }
+        updated_json = json.dumps(updated_data, separators=(",", ":"))
 
-        # updated_json_data = json.dumps(updated_data, separators=(",", ":")  )
-        updated_json_data = json.dumps(updated_data, indent=4)
-
-        await self.__deleteAllMessages__()
-        await self.__sendNewMessages__(updated_json_data)
+        await self._delete_all_messages()
+        await self._send_new_message(updated_json)
+        print("[INFO] Database updated and synced with Telegram")
